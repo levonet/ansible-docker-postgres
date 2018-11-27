@@ -1,0 +1,31 @@
+---
+docker_postgres__name: postgres
+docker_postgres__image: postgres:latest
+docker_postgres__port: 5432
+docker_postgres__superuser_name: postgres
+docker_postgres__superuser_password: postgres
+docker_postgres__remove_existing_container: yes
+docker_postgres__pull_image: yes
+docker_postgres__file_volumes: []
+docker_postgres__network_mode:
+docker_postgres__networks: []
+docker_postgres__env: {}
+docker_postgres__log_driver: json-file
+docker_postgres__log_options:
+
+# Don't change
+docker_postgres__home: "/opt/{{ docker_postgres__name }}"
+docker_postgres__directories:
+- path: "{{ docker_postgres__home }}"
+  mode: "0700"
+- path: "{{ docker_postgres__home }}/data"
+  owner: 70
+  group: 70
+- path: "{{ docker_postgres__home }}/conf"
+docker_postgres__ports:
+- "{{ docker_postgres__port }}:5432"
+docker_postgres__directory_volumes:
+- "{{ docker_postgres__home }}/data:/var/lib/postgresql/data"
+docker_postgres__default_env:
+  POSTGRES_USER: "{{ docker_postgres__superuser_name }}"
+  POSTGRES_PASSWORD: "{{ docker_postgres__superuser_password }}"

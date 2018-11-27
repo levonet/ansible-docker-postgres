@@ -1,0 +1,32 @@
+---
+- name: Create directories
+  file:
+    state: directory
+    path: "{{ item.path }}"
+    mode: "{{ item.mode | default(0755) }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default('root') }}"
+  with_items: "{{ docker_postgres__directories }}"
+
+- name: Remove existing {{ docker_postgres__name }} container
+  docker_container:
+    name: "{{ docker_postgres__name }}"
+    state: absent
+  when: docker_postgres__remove_existing_container
+
+- name: Run postgres container
+  docker_container:
+    name: "{{ docker_postgres__name }}"
+    image: "{{ docker_postgres__image }}"
+    pull: "{{ docker_postgres__pull_image }}"
+    restart_policy: always
+    network_mode: "{{ docker_postgres__network_mode }}"
+    networks: "{{ docker_postgres__networks }}"
+    expose:
+    - 5432
+    ports: "{{ docker_postgres__ports }}"
+    user: postgres:postgres
+    env: "{{ docker_postgres__default_env | combine(docker_postgres__env) }}"
+    volumes: "{{ docker_postgres__directory_volumes + docker_postgres__file_volumes }}"
+    log_driver: "{{ docker_postgres__log_driver }}"
+    log_options: "{{ docker_postgres__log_options }}"
