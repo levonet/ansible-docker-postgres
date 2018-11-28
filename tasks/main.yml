@@ -1,4 +1,16 @@
 ---
+- name: Remove existing {{ docker_postgres__name }} container
+  docker_container:
+    name: "{{ docker_postgres__name }}"
+    state: absent
+  when: docker_postgres__remove_existing_container
+
+- name: Remove home directory
+  file:
+    state: absent
+    path: "{{ docker_postgres__home }}"
+  when: docker_postgres__remove_existing_home_dir
+
 - name: Create directories
   file:
     state: directory
@@ -8,16 +20,43 @@
     group: "{{ item.group | default('root') }}"
   with_items: "{{ docker_postgres__directories }}"
 
-- name: Remove existing {{ docker_postgres__name }} container
+- name: Copy all the data from the master
   docker_container:
-    name: "{{ docker_postgres__name }}"
-    state: absent
-  when: docker_postgres__remove_existing_container
+    name: "{{ docker_postgres__name }}-pg_basebackup"
+    image: "{{ docker_postgres__image }}"
+    detach: no
+    cleanup: yes
+    env:
+      PGHOST: "{{ docker_postgres__master_host }}"
+      PGPORT: "{{ docker_postgres__master_port }}"
+      PGUSER: "{{ docker_postgres__superuser_name }}"
+      PGPASSWORD: "{{ docker_postgres__superuser_password }}"
+    volumes: "{{ docker_postgres__directory_volumes }}"
+    user: postgres:postgres
+    command: "pg_basebackup -w -D /var/lib/postgresql/data"
+  when: docker_postgres__slave
+
+- name: Copy pg_hba config
+  copy:
+    content: "{{ docker_postgres__pg_hba_conf }}"
+    dest: "{{ docker_postgres__home }}/conf/pg_hba.conf"
+
+- name: Copy postgresql config
+  copy:
+    content: "{{ docker_postgres__postgresql_conf }}"
+    dest: "{{ docker_postgres__home }}/conf/postgresql.conf"
+
+- name: Copy recovery config
+  copy:
+    content: "{{ docker_postgres__recovery_conf }}"
+    dest: "{{ docker_postgres__home }}/data/recovery.conf"
+  when: docker_postgres__slave
 
 - name: Run postgres container
   docker_container:
     name: "{{ docker_postgres__name }}"
     image: "{{ docker_postgres__image }}"
+    command: --config_file=/etc/postgresql/postgresql.conf --hba_file=/etc/postgresql/pg_hba.conf
     pull: "{{ docker_postgres__pull_image }}"
     restart_policy: always
     network_mode: "{{ docker_postgres__network_mode }}"
@@ -30,3 +69,13 @@
     volumes: "{{ docker_postgres__directory_volumes + docker_postgres__file_volumes }}"
     log_driver: "{{ docker_postgres__log_driver }}"
     log_options: "{{ docker_postgres__log_options }}"
+
+- name: Wait for postgres to be started
+  wait_for:
+    host: "{{ docker_postgres__master_host }}"
+    port: "{{ docker_postgres__port }}"
+    state: started
+    delay: 5
+    connect_timeout: 15
+    timeout: 30
+  when: not docker_postgres__slave or docker_postgres__wait_for_start
