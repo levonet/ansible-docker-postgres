@@ -12,6 +12,44 @@ docker_postgres__networks: []
 docker_postgres__env: {}
 docker_postgres__log_driver: json-file
 docker_postgres__log_options:
+docker_postgres__slave: no
+docker_postgres__master_host: localhost
+docker_postgres__master_port: 5432
+docker_postgres__wait_for_start: no
+docker_postgres__remove_existing_home_dir: no
+docker_postgres__pg_hba_conf: |
+  # This file is managed by Ansible, all changes will be lost.
+  # TYPE  DATABASE        USER            ADDRESS                 METHOD
+  local   all             all                                     trust
+  host    all             all             127.0.0.1/32            trust
+  host    all             all             ::1/128                 trust
+  local   replication     all                                     trust
+  host    replication     all             127.0.0.1/32            trust
+  host    replication     all             ::1/128                 trust
+  host    all             all             all                     md5
+  host    replication     {{ docker_postgres__superuser_name }}        all                     md5
+docker_postgres__postgresql_conf: |
+  # This file is managed by Ansible, all changes will be lost.
+  listen_addresses = '*'
+  max_connections = 100
+  shared_buffers = 128MB
+  dynamic_shared_memory_type = posix
+  max_wal_size = 1GB
+  min_wal_size = 80MB
+  log_timezone = 'UTC'
+  datestyle = 'iso, mdy'
+  timezone = 'UTC'
+  lc_messages = 'en_US.utf8'
+  lc_monetary = 'en_US.utf8'
+  lc_numeric = 'en_US.utf8'
+  lc_time = 'en_US.utf8'
+  default_text_search_config = 'pg_catalog.english'
+docker_postgres__recovery_conf: |
+  # This file is managed by Ansible, all changes will be lost.
+  standby_mode             = 'on'
+  primary_conninfo         = 'host={{ docker_postgres__master_host }} port={{ docker_postgres__master_port }} user={{ docker_postgres__superuser_name }} password={{ docker_postgres__superuser_password }}'
+  trigger_file             = '/var/lib/postgresql/data/promote_to_master'
+  recovery_target_timeline = 'latest'
 
 # Don't change
 docker_postgres__home: "/opt/{{ docker_postgres__name }}"
@@ -25,6 +63,7 @@ docker_postgres__directories:
 docker_postgres__ports:
 - "{{ docker_postgres__port }}:5432"
 docker_postgres__directory_volumes:
+- "{{ docker_postgres__home }}/conf:/etc/postgresql"
 - "{{ docker_postgres__home }}/data:/var/lib/postgresql/data"
 docker_postgres__default_env:
   POSTGRES_USER: "{{ docker_postgres__superuser_name }}"
