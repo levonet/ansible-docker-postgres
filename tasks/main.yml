@@ -15,7 +15,7 @@
   file:
     state: directory
     path: "{{ item.path }}"
-    mode: "{{ item.mode | default(0755) }}"
+    mode: "{{ item.mode | default('0755') }}"
     owner: "{{ item.owner | default('root') }}"
     group: "{{ item.group | default('root') }}"
   with_items: "{{ docker_postgres__directories }}"
