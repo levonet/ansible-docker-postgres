@@ -9,6 +9,7 @@ docker_postgres__pull_image: yes
 docker_postgres__file_volumes: []
 docker_postgres__network_mode:
 docker_postgres__networks: []
+docker_postgres__purge_networks: no
 docker_postgres__env: {}
 docker_postgres__log_driver: json-file
 docker_postgres__log_options:

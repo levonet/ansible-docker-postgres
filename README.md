@@ -17,6 +17,7 @@ Role Variables
 - `docker_postgres__env` (optional): Environment Variables.
 - `docker_postgres__network_mode` (default: host): Connect the container to a network.
 - `docker_postgres__networks` (default: []): List of networks the container belongs to.
+- `docker_postgres__purge_networks`(default: no): Enforce the removal of the default network (and all other networks not explicitly mentioned in networks).
 - `docker_postgres__log_driver` (default: json-file): Specify the logging driver.
 - `docker_postgres__log_options` (optional): Dictionary of options specific to the chosen log_driver. See [Configure logging drivers](https://docs.docker.com/engine/admin/logging/overview/) for details.
 - `docker_postgres__remove_existing_home_dir` (default: no): Remove home directory of instance with data and old configs before setup postgres. It's needed for CI.

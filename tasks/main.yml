@@ -61,6 +61,7 @@
     restart_policy: always
     network_mode: "{{ docker_postgres__network_mode }}"
     networks: "{{ docker_postgres__networks }}"
+    purge_networks: "{{ docker_postgres__purge_networks | default('no') }}"
     expose:
     - 5432
     ports: "{{ docker_postgres__ports }}"
